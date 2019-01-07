@@ -1,0 +1,295 @@
+---
+
+- name: PLAYBOOK | Setup your new Linux box
+  hosts: localhost
+  gather_facts: true
+  vars:
+    ansible_ssh_pass: "{{ user_password }}"
+  vars_prompt:
+    - name: "user_password"
+      prompt: "Please enter your Linux user password"
+      private: yes
+    - name: "sudoers_response"
+      prompt: "This playbook requires the user to have passwordless sudo.\nWould you like me to setup passwordless sudo for the current user? (y/N)"
+      private: no
+    - name: "intellij_response"
+      prompt: "Would you like to install Intellij IDEA Community Edition? (y/N)"
+      private: no
+    - name: "gnome_response"
+      prompt: "Would you like to make GNOME sooooo dark and customize the way dRock likes it? (y/N)"
+      private: no
+    - name: "ansible_response"
+      prompt: "Would you like to install an Ansible python virtual environment in your home directory?\nEnter a valid version number or 'latest' to install; Enter 'N', 'n', 'no' to skip.\nExamples: '2.6.0', '2.7.0rc3', 'latest', 'n'"
+      private: no
+    - name: "vim_response"
+      prompt: "Would you like to ensure vim is the default editor? Hint: the answer is Yes, nano sucks (y/N)"
+      private: no
+    - name: "chrome_response"
+      prompt: "Would you like to install Google Chrome? (y/N)"
+      private: no
+    - name: "workspace_response"
+      prompt: "Would you like to setup a workspace?\nWARNING: Answering yes will BLOW AWAY any existing files from $HOME/workspace (y/N)"
+      private: no
+    - name: "git_run_response"
+      prompt: "Would you like me to setup NVM, install the latest stable node (using NVM), and install Git-Run (y/N)"
+      private: no
+
+  pre_tasks:
+
+    - set_fact:
+        sudoers_setup: false
+        intellij_setup: false
+        gnome_setup: false
+        ansible_setup: false
+        vim_setup: false
+        chrome_setup: false
+        workspace_setup: false
+        git_run_setup: false
+        incorrect_input: false
+
+    - set_fact:
+        sudoers_setup: true
+      when: ( sudoers_response | lower ) == 'yes' or  ( sudoers_response | lower ) == 'y'
+
+    - set_fact:
+        intellij_setup: true
+      when: ( intellij_response | lower ) == 'yes' or  ( intellij_response | lower ) == 'y'
+
+    - set_fact:
+        gnome_setup: true
+      when: ( gnome_response | lower ) == 'yes' or  ( gnome_response | lower ) == 'y'
+
+    - set_fact:
+        ansible_setup: true
+      when: ( ansible_response | lower ) != 'no' and  ( ansible_response | lower ) != 'n' and ansible_response != ''
+
+    - set_fact:
+        vim_setup: true
+      when: ( vim_response | lower ) == 'yes' or  ( vim_response | lower ) == 'y'
+
+    - set_fact:
+        chrome_setup: true
+      when: ( chrome_response | lower ) == 'yes' or  ( chrome_response | lower ) == 'y'
+
+    - set_fact:
+        workspace_setup: true
+      when: ( workspace_response | lower ) == 'yes' or  ( workspace_response | lower ) == 'y'
+
+    - set_fact:
+        git_run_setup: true
+      when: ( git_run_response | lower ) == 'yes' or  ( git_run_response | lower ) == 'y'
+
+    - pause:
+        prompt: "Where is your workspace skel? This should be a (HTTPS) url to a git repo.\nPlease format as a complete url including 'https://'\n"
+        echo: yes
+      when: workspace_setup
+      register: task_result
+
+    - set_fact:
+        workspace_skel_src: "{{ task_result.user_input }}"
+      when: workspace_setup
+
+    - set_fact:
+        incorrect_input: true
+      when: workspace_skel_src is defined and not workspace_skel_src.startswith('https://') and workspace_setup
+
+    - pause:
+        prompt: "Only HTTPS urls may be used to clone your workspace skel.\nPlease include the full url including 'https://'"
+        echo: yes
+      when: incorrect_input and workspace_setup
+      register: task_result
+      until: task_result.user_input.startswith('https://')
+
+    - set_fact:
+        workspace_skel_src: "{{ task_result.user_input }}"
+      when: incorrect_input and workspace_setup
+
+    - pause:
+        prompt: "What username shall I use to clone the workspace skel repository"
+        echo: yes
+      when: workspace_setup
+      register: task_result
+
+    - set_fact:
+        workspace_skel_user: "{{ task_result.user_input }}"
+      when: workspace_setup
+
+    - pause:
+        prompt: "What password shall I use to clone the workspace skel repository"
+        echo: no
+      when: workspace_setup
+      register: task_result
+
+    - set_fact:
+        workspace_skel_pw: "{{ task_result.user_input }}"
+      when: workspace_setup
+
+    - set_fact:
+        workspace_skel_git_url: "{{ 'https://' + ( workspace_skel_user | urlencode ) + ':' + ( workspace_skel_pw | urlencode ) + '@' + workspace_skel_src.split('https://')[1] }}"
+      when: workspace_setup
+
+    - name: SHELL | Get user's group
+      shell: "/usr/bin/id {{ ansible_user_id }} -gn"
+      register: command_result
+
+    - set_fact:
+        workspace_setup_user_group: "{{ command_result.stdout_lines[0] }}"
+
+    - name: LINEINFILE | Setup Passwordless sudo
+      become: true
+      become_user: root
+      vars:
+        ansible_become_pass: "{{ user_password }}"
+      lineinfile:
+          line: '{{ ansible_user_id }}      ALL=(ALL)   NOPASSWD: ALL'
+          path: "/etc/sudoers.d/{{ ansible_user_id }}"
+          owner: "root"
+          group: "root"
+          mode: 'u=r,o=,g='
+          create: true
+      when: sudoers_setup
+
+  roles:
+    - role: ar_linux_customize_gnome
+      when: gnome_setup
+      delegate_to: "{{ ansible_default_ipv4.address }}"
+
+    - role: ar_linux_ansible_venv
+      linux_ansible_venv_version: "{{ ansible_response }}"
+      when: ansible_setup
+
+    - role: ar_linux_intellij
+      when: intellij_setup
+
+    - role: ar_linux_vim
+      when: vim_setup
+
+    - role: ar_linux_chrome
+      when: chrome_setup
+
+  tasks:
+
+    - name: TEMPFILE | Create a temporary directory on the localhost
+      tempfile:
+        state: directory
+        suffix: linux_workspace_setup
+      register: linux_workspace_setup_tempdir
+      changed_when: false
+
+    - name: GIT | Clone the the workspace/ssh skel directory
+      git:
+        repo: "{{ workspace_skel_git_url }}"
+        dest: "{{ linux_workspace_setup_tempdir.path }}"
+      when: workspace_setup
+
+    - name: FIND | Get names of all of the files in .ssh directory
+      find:
+        path: "{{ linux_workspace_setup_tempdir.path }}/.ssh"
+      register: task_result
+      when: workspace_setup
+
+    - name: FILE | Ensure .ssh directory exists
+      file:
+        path: "{{ ansible_user_dir }}/.ssh"
+        owner: "{{ ansible_user_id }}"
+        group: "{{ workspace_setup_user_group }}"
+        mode: "u=rwx,g=,o="
+        state: directory
+      when: workspace_setup
+
+    - name: COPY | Move all of the files in .ssh
+      copy:
+        src: "{{ item.path }}"
+        dest: "{{ ansible_user_dir }}/.ssh"
+        owner: "{{ ansible_user_id }}"
+        group: "{{ workspace_setup_user_group }}"
+        mode: "u=rw,g=,o="
+        remote_src: true
+      with_items: "{{ task_result.files }}"
+      when: workspace_setup
+
+    - name: COPY | Copy in the .gitconfig and .git-credentials
+      copy:
+        src: "{{ linux_workspace_setup_tempdir.path }}/{{ item }}"
+        dest: "{{ ansible_user_dir }}/{{ item }}"
+        owner: "{{ ansible_user_id }}"
+        group: "{{ workspace_setup_user_group }}"
+        mode: "u=rw,g=,o="
+        remote_src: true
+      with_items:
+        - .gitconfig
+        - .git-credentials
+      when: workspace_setup
+
+    - name: FILE | BLOW AWAY exisitng workspace
+      file:
+        path: "{{ ansible_user_dir }}/workspace"
+        state: absent
+      when: workspace_setup
+
+    - name: COMMAND | Copy the workspace skel to {{ ansible_user_dir }}/workspace
+      command: cp -R {{ linux_workspace_setup_tempdir.path }}/workspace {{ ansible_user_dir }}/
+      when: workspace_setup
+
+    - name: FILE | Set permssions on new directory
+      file:
+        path: "{{ ansible_user_dir }}/workspace"
+        state: directory
+        recurse: true
+        owner: "{{ ansible_user_id }}"
+        group: "{{ workspace_setup_user_group }}"
+        mode: "u=rwX,g=,o="
+      when: workspace_setup
+
+    - name: REPLACE | Ensure correct directory in git_repos file
+      replace:
+        path: "{{ linux_workspace_setup_tempdir.path }}/git_repos.yml"
+        regexp: 'dest:.*workspace'
+        replace: 'dest: {{ ansible_user_dir }}/workspace'
+      when: workspace_setup
+
+    - name: SHELL | Run pymgit to clone repos to workspace
+      shell: "pymgit -r {{ linux_workspace_setup_tempdir.path }}/git_repos.yml -g"
+      when: workspace_setup
+
+    - name: PACKAGE | Install curl
+      become: true
+      become_user: root
+      vars:
+        ansible_python_interpreter: /usr/bin/python
+      package:
+        name: curl
+      when: git_run_setup
+
+    - name: SHELL | Install NVM
+      shell: "curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.33.11/install.sh | bash"
+      args:
+        creates: "{{ ansible_user_dir }}/.nvm/nvm.sh"
+        executable: /bin/bash
+
+    - name: SHELL | Install Stable node
+      shell: "source {{ ansible_user_dir }}/.nvm/nvm.sh && nvm install stable"
+      args:
+        executable: /bin/bash
+        creates: "{{ ansible_user_dir }}/.nvm/alias"
+      when: git_run_setup
+
+    - name: SHELL | Check if git-run is installed
+      shell: "source {{ ansible_user_dir }}/.nvm/nvm.sh && gr --version"
+      args:
+        executable: /bin/bash
+      changed_when: false
+      ignore_errors: true
+      register: task_result
+      when: git_run_setup
+
+    - name: SHELL | Install git-run
+      shell: "source {{ ansible_user_dir }}/.nvm/nvm.sh && npm install -g git-run"
+      args:
+        executable: /bin/bash
+      when: git_run_setup
+
+    - name: FILE | BLOW AWAY temporary directory
+      file:
+        path: "{{ linux_workspace_setup_tempdir.path }}"
+        state: absent

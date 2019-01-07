@@ -1,0 +1,190 @@
+#roles in our project
+roles/*
+!roles/requirements.yml
+
+
+#------------------------------------------------------------------------------
+# Ansible
+# https://github.com/github/gitignore/blob/master/Global/Ansible.gitignore
+#------------------------------------------------------------------------------
+*.retry
+*.galaxy_install_info
+
+#------------------------------------------------------------------------------
+# Eclipse
+# https://github.com/github/gitignore/blob/master/Global/Eclipse.gitignore
+#------------------------------------------------------------------------------
+.metadata
+bin/
+tmp/
+*.tmp
+*.bak
+*.swp
+*~.nib
+local.properties
+.settings/
+.loadpath
+.recommenders
+
+#Eclipse core
+.project
+
+#External tool builders
+.externalToolBuilders/
+
+#Locally stored launch configs
+*.launch
+
+#Eclipse Python
+*.pydevproject
+
+#CDT specific projects
+.cproject
+
+#JDT specific projects
+.classpath
+
+#Java annotation processor (APT)
+.factorypath
+
+#PDT specific projects
+.buildpath
+
+# sbteclipse plugin
+.target
+
+# Tern plugin
+.tern-project
+
+#Texlipse plugin
+.texlipse
+
+# STS (spring tool suite)
+.springBeans
+
+#Code recommenders
+.recommenders/
+
+#OpenOffice lock files
+*.~lock*
+
+#------------------------------------------------------------------------------
+# Linux
+# https://github.com/github/gitignore/blob/master/Global/Linux.gitignore
+#------------------------------------------------------------------------------
+*~
+
+#temporary files which can be created if a process still has a handle open
+.fuse_hidden*
+
+# KDE directory preferences
+.direcdtory
+
+# Linux trash folder
+.Trash-*
+
+# .nfs files are created when an open files is removed but is still being accessed
+.nfs*
+
+#------------------------------------------------------------------------------
+# Python
+# https://github.com/github/gitignore/blob/master/Global/Python.gitignore
+#------------------------------------------------------------------------------
+
+#Byte compiled/optimized files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+#PyInstaller
+*.manifest
+#*.spec # interfere with jasmine?
+
+#Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# pyenv
+.python-version
+
+# dotenv
+.env
+
+# virtualenv
+.venv/
+venv/
+ENV/
+
+#------------------------------------------------------------------------------
+# Vim
+# https://github.com/github/gitignore/blob/master/Global/Vim.gitignore
+#------------------------------------------------------------------------------
+
+#swap
+[._]*.s[a-v][a-z]
+[._]*.sw[a-p]
+[._]s[a-v][a-z]
+[._]sw[a-p]
+
+#Session
+Session.vim
+
+#Temporary
+.netrwhist
+*~
+
+# auto-generated tag files
+tags
+
+#------------------------------------------------------------------------------
+# Windows
+# https://github.com/github/gitignore/blob/master/Global/Windows.gitignore
+#------------------------------------------------------------------------------
+
+#Windows thumbnail cache files
+Thumbs.db
+ehthumbs.db
+ehthumbs_vista.db
+
+# Folder config file
+Desktop.ini
+
+# Recycle Bin
+$RECYCLE.BIN/
+
+# Windows installer files
+*.cab
+*.msi
+*.msm
+*.msp
+
+# Windows shortcuts
+*.lnk
+
+#------------------------------------------------------------------------------
+# IntelliJ IDEA
+#------------------------------------------------------------------------------
+*.idea*
+*.iml
