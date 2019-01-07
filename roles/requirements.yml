@@ -1,0 +1,21 @@
+---
+
+- src: https://github.com/dinohead/ar_linux_ansible_venv.git
+  scm: git
+  version: master
+
+- src: https://github.com/dinohead/ar_linux_chrome.git
+  scm: git
+  version: master
+
+- src: https://github.com/dinohead/ar_linux_customize_gnome.git
+  scm: git
+  version: master
+
+- src: https://github.com/dinohead/ar_linux_intellij.git
+  scm: git
+  version: master
+
+- src: https://github.com/dinohead/ar_linux_vim.git
+  scm: git
+  version: master
