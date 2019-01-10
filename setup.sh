@@ -4,7 +4,7 @@ set -e
 set -x
 
 echo 'Setting up a virtualenv to run the playbook'
-sudo apt install -y python python-virtualenv openssh-server || sudo yum -y install python python-virtualenv openssh-server
+sudo apt install -y python python-virtualenv openssh-server sshpass|| sudo yum -y install python python-virtualenv openssh-server sshpass
 virtualenv $HOME/venv_setup
 cp -r /usr/lib64/python2.7/site-packages/selinux/ $HOME/venv_setup/lib/python2.7/site-packages/ || true
 source $HOME/venv_setup/bin/activate
